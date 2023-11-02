@@ -1,6 +1,6 @@
 import httpx
 from selectolax.parser import HTMLParser
-
+from pymongo import  MongoClient
 def get_html(baseurl, params=None):
     #nagłówek "User-Agent" dla żądania HTTP
     headers = {
@@ -17,7 +17,7 @@ def extract_text(element, sel):
     except AttributeError:
         return None
     
-def parse_page(html):
+def parse_page(html, collection):
     # Szukanie elementów HTML reprezentujących pojazdy 
     for car_element in html.css("div.vehicle-card__content"):
         car = {
@@ -28,8 +28,17 @@ def parse_page(html):
         }
         # Wypisujemy informacje o pojazdach
         print(f"name: {car['name']}\nprice: {car['price']}\ncondition: {car['condition']}\nlink: {car['link']}\n---------")
+        
+        # Zapisujemy pojazd do MongoDB
+        collection.insert_one(car)
 
 def main():
+    # Nawiązanie połączenia z MongoDB
+    client = MongoClient('###')
+    db = client['mydb']
+    collection = db['cars']
+
+
     baseurl = "https://ucars.pro/pl/sales-history"
     num_pages = 10  # Liczba stron do przetworzenia
     
@@ -37,10 +46,7 @@ def main():
         print(f"Pobieranie strony {page}")
         html = get_html(baseurl, params={'page': page})
         if html:
-            parse_page(html)
+            parse_page(html, collection)
 
 if __name__ == "__main__":
     main()
-
-
-    ###Importing Data to MySql in progress
