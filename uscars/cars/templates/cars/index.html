@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Scraping aukcji samochodów</title>
+</head>
+<body>
+    <h1>Scraping aukcji samochodów</h1>
+    
+    <!-- Formularz do wprowadzenia liczby stron -->
+    <form action="" method="post">
+        {% csrf_token %}
+        <label for="num_pages">Liczba stron do przetworzenia:</label>
+        <input type="number" id="num_pages" name="num_pages" min="1" value="{{ num_pages|default_if_none:"1" }}">
+        <button type="submit">Uruchom Scraping</button>
+    </form>
+
+    <!-- Wyświetlanie samochodów wraz z linkami -->
+    {% if cars_list %}
+        <table>
+            <tr>
+                <th>Nazwa</th>
+                <th>Cena</th>
+                <th>Stan</th>
+                <th>Link do aukcji</th>
+            </tr>
+            {% for car in cars_list %}
+            <tr>
+                <td>{{ car.name }}</td>
+                <td>{{ car.price }}</td>
+                <td>{{ car.condition }}</td>
+                <td><a href="{{ car.link }}">Link do aukcji</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>Brak danych do wyświetlenia.</p>
+    {% endif %}
+    
+    <!-- Wyświetlanie komunikatu o błędzie -->
+    {% if error %}
+        <p>Error: {{ error }}</p>
+    {% endif %}
+</body>
+</html>

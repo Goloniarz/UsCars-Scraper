@@ -1,6 +1,6 @@
 import httpx
 from selectolax.parser import HTMLParser
-
+from pymongo import  MongoClient
 def get_html(baseurl, params=None):
     #nagłówek "User-Agent" dla żądania HTTP
     headers = {
@@ -16,9 +16,9 @@ def extract_text(element, sel):
         return element.css_first(sel).text().strip("'")
     except AttributeError:
         return None
-    
+
 def parse_page(html):
-    # Szukanie elementów HTML reprezentujących pojazdy 
+    cars = []
     for car_element in html.css("div.vehicle-card__content"):
         car = {
             "name": extract_text(car_element, ".vehicle-card__title"),
@@ -26,21 +26,34 @@ def parse_page(html):
             "condition": extract_text(car_element, ".vehicle-card__specs"),
             "link": car_element.css_first("a").attributes["href"]
         }
-        # Wypisujemy informacje o pojazdach
-        print(f"name: {car['name']}\nprice: {car['price']}\ncondition: {car['condition']}\nlink: {car['link']}\n---------")
+        cars.append(car)
+    return cars
+
+
+def find_max_pages(html):
+    """Znajdź maksymalną liczbę stron na podstawie paginacji."""
+    
+    page_numbers = html.css('div.pagination a.page-number')
+    if not page_numbers:
+        return 1 
+    return max(int(page.text()) for page in page_numbers if page.text().isdigit())
 
 def main():
+    client = MongoClient('mongodb://localhost:27017')
+    db = client['mydb']
+    collection = db['cars']
+
     baseurl = "https://ucars.pro/pl/sales-history"
-    num_pages = 10  # Liczba stron do przetworzenia
     
-    for page in range(1, num_pages + 1):
+    # Pobieranie pierwszej strony, aby sprawdzić, ile stron jest dostępnych
+    first_page_html = get_html(baseurl)
+    max_pages = find_max_pages(first_page_html)
+    
+    for page in range(1, max_pages + 1):
         print(f"Pobieranie strony {page}")
         html = get_html(baseurl, params={'page': page})
         if html:
-            parse_page(html)
+            parse_page(html, collection)
 
 if __name__ == "__main__":
     main()
-
-
-    ###Importing Data to MySql in progress
